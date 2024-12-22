@@ -93,8 +93,8 @@ conda env update -n myenv -f /home/jetson/Desktop/environment.yml
 通过网盘分享的文件：main_realese
 链接: https://pan.baidu.com/s/1cdBEU8QNNW3SYVuAfNuY9A 提取码: 1111 
 --来自百度网盘超级会员v1的分享
-通过网盘分享的文件：_internal
-链接: https://pan.baidu.com/s/1QJyNIIKDkNeVAZFrXAHH5A 提取码: 1111 
+通过网盘分享的文件：_internal.tar.gz
+链接: https://pan.baidu.com/s/1nOWcrDip2Z5zIyYgA9Hk2w 提取码: 1111 
 --来自百度网盘超级会员v1的分享
 在环境搭配好之后，将这两个文件拷贝到桌面
  
