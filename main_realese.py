@@ -1,93 +1,89 @@
-# -*- coding: utf-8 -*-
-import csv
-import sqlite3
-import sys
-import threading
-import time
-import inspect
-import ctypes
-import os
-import datetime
-import os
-print("PYTHONPATH:", os.environ.get("PYTHONPATH"))
-print("LD_LIBRARY_PATH:", os.environ.get("LD_LIBRARY_PATH"))
+# -*- coding: utf-8 -*-  # 设置文件编码为UTF-8
+import csv  # 导入CSV模块
+import sqlite3  # 导入SQLite3模块
+import sys  # 导入系统模块
+import threading  # 导入线程模块
+import time  # 导入时间模块
+import inspect  # 导入检查模块
+import ctypes  # 导入C类型模块
+import os  # 导入操作系统模块
+import datetime  # 导入日期时间模块
+import os  # 再次导入操作系统模块（重复）
+print("PYTHONPATH:", os.environ.get("PYTHONPATH"))  # 打印PYTHONPATH环境变量
+print("LD_LIBRARY_PATH:", os.environ.get("LD_LIBRARY_PATH"))  # 打印LD_LIBRARY_PATH环境变量
 
-import cv2
-import numpy as np
-from ctypes import cast, POINTER, byref, sizeof, c_ubyte, cdll
-from PyQt5.QtWidgets import (
+import cv2  # 导入OpenCV模块
+import numpy as np  # 导入NumPy模块
+from ctypes import cast, POINTER, byref, sizeof, c_ubyte, cdll  # 从ctypes模块导入特定函数和类型
+from PyQt5.QtWidgets import (  # 从PyQt5.QtWidgets导入各种GUI组件
     QApplication, QMainWindow, QLabel, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QScrollArea, QSizePolicy, QDialog, QAction, QFileDialog, QTableWidget,
     QTableWidgetItem, QHeaderView, QMessageBox, QGroupBox, QCheckBox, QInputDialog, QFormLayout, QLineEdit,
     QDesktopWidget, QStackedWidget, QDateEdit, QMenu, QListWidget
 )
-from PyQt5.QtGui import QPixmap, QImage, QFont, QIcon
-from PyQt5.QtCore import QTimer, Qt, pyqtSignal, QSize, QMetaObject, Q_ARG
+from PyQt5.QtGui import QPixmap, QImage, QFont, QIcon  # 从PyQt5.QtGui导入图形相关组件
+from PyQt5.QtCore import QTimer, Qt, pyqtSignal, QSize, QMetaObject, Q_ARG  # 从PyQt5.QtCore导入核心模块
 
 # 导入相机控制模块（请确保这些模块已正确安装和导入）
 from MvCameraControl_class import *
 from MvErrorDefine_const import *
 from CameraParams_header import *
-from ultralytics import YOLO
-from database import create_connection
-import os
-from PyQt5.QtWidgets import (
+from ultralytics import YOLO  # 导入YOLO模型
+from database import create_connection  # 从database模块导入create_connection函数
+import os  # 再次导入操作系统模块（重复）
+from PyQt5.QtWidgets import (  # 再次从PyQt5.QtWidgets导入各种GUI组件（重复）
     QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout,
     QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView,
     QFileDialog, QCheckBox, QComboBox, QDateTimeEdit, QScrollArea
 )
-from PyQt5.QtCore import Qt, QDateTime
+from PyQt5.QtCore import Qt, QDateTime  # 从PyQt5.QtCore导入核心模块（重复）
 
 # 强制关闭线程
 def Async_raise(tid, exctype):
-    tid = ctypes.c_long(tid)
-    if not inspect.isclass(exctype):
-        exctype = type(exctype)
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+    tid = ctypes.c_long(tid)  # 将线程ID转换为长整型
+    if not inspect.isclass(exctype):  # 如果异常类型不是类
+        exctype = type(exctype)  # 将异常类型转换为类
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(  # 异步抛出异常
         tid, ctypes.py_object(exctype)
     )
-    if res == 0:
+    if res == 0:  # 如果返回值为0，说明线程ID无效
         raise ValueError("invalid thread id")
-    elif res != 1:
-        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+    elif res != 1:  # 如果返回值不为1，说明设置失败
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)  # 取消设置
         raise SystemError("PyThreadState_SetAsyncExc failed")
-
 
 # 停止线程
 def Stop_thread(thread):
-    Async_raise(thread.ident, SystemExit)
-
+    Async_raise(thread.ident, SystemExit)  # 异步抛出SystemExit异常，停止线程
 
 # 转为16进制字符串
 def To_hex_str(num):
-    chaDic = {
+    chaDic = {  # 定义一个字典，将10-15转换为a-f
         10: 'a', 11: 'b', 12: 'c', 13: 'd',
         14: 'e', 15: 'f'
     }
     hexStr = ""
-    if num < 0:
-        num = num + 2 ** 32
-    while num >= 16:
-        digit = num % 16
-        hexStr = chaDic.get(digit, str(digit)) + hexStr
-        num //= 16
-    hexStr = chaDic.get(num, str(num)) + hexStr
+    if num < 0:  # 如果数字为负数
+        num = num + 2 ** 32  # 转换为正数
+    while num >= 16:  # 当数字大于等于16时
+        digit = num % 16  # 取余数
+        hexStr = chaDic.get(digit, str(digit)) + hexStr  # 将余数转换为对应的16进制字符
+        num //= 16  # 整除16
+    hexStr = chaDic.get(num, str(num)) + hexStr  # 将最后的数字转换为16进制字符
     return hexStr
-
 
 # 是否是Mono图像
 def Is_mono_data(enGvspPixelType):
-    mono_pixel_types = [
+    mono_pixel_types = [  # 定义Mono图像的像素类型
         PixelType_Gvsp_Mono8, PixelType_Gvsp_Mono10,
         PixelType_Gvsp_Mono10_Packed, PixelType_Gvsp_Mono12,
         PixelType_Gvsp_Mono12_Packed
     ]
-    return enGvspPixelType in mono_pixel_types
-
+    return enGvspPixelType in mono_pixel_types  # 判断输入的像素类型是否在Mono图像类型中
 
 # 是否是彩色图像
 def Is_color_data(enGvspPixelType):
-    color_pixel_types = [
+    color_pixel_types = [  # 定义彩色图像的像素类型
         PixelType_Gvsp_BayerGR8, PixelType_Gvsp_BayerRG8,
         PixelType_Gvsp_BayerGB8, PixelType_Gvsp_BayerBG8,
         PixelType_Gvsp_BayerGR10, PixelType_Gvsp_BayerRG10,
@@ -105,7 +101,7 @@ def Is_color_data(enGvspPixelType):
         PixelType_Gvsp_YUV422_Packed,
         PixelType_Gvsp_YUV422_YUYV_Packed
     ]
-    return enGvspPixelType in color_pixel_types
+    return enGvspPixelType in color_pixel_types  # 判断输入的像素类型是否在彩色图像类型中
 
 
 # 定义一个可点击的 QLabel
