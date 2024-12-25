@@ -126,7 +126,7 @@ class GPIOAlarm:
         self.buzzer_pin = buzzer_pin
         self.close_pin = close_pin
         try:
-            import Jetson.GPIO as GPIO
+            import RPi.GPIO as GPIO
             self.GPIO_AVAILABLE = True
             GPIO.setmode(GPIO.BCM)
             # set output mode
@@ -135,47 +135,46 @@ class GPIOAlarm:
             GPIO.setup(self.buzzer_pin, GPIO.OUT)
             GPIO.setup(self.close_pin, GPIO.OUT)
             # initial GPIO
-            GPIO.output(self.green_pin, GPIO.HIGH)
+            GPIO.output(self.green_pin, GPIO.LOW)
             GPIO.output(self.red_pin, GPIO.HIGH)
-            GPIO.output(self.buzzer_pin, GPIO.LOW)
-            GPIO.output(self.close_pin, GPIO.LOW)
+            GPIO.output(self.buzzer_pin, GPIO.HIGH)
+            GPIO.output(self.close_pin, GPIO.HIGH)
             self.GPIO = GPIO
         except ImportError:
             self.GPIO_AVAILABLE = False
-            print("GPIO库未找到，GPIO报警功能将被禁用。")
+            print("RPi.GPIO库未找到，GPIO报警功能将被禁用。")
 
     def trigger_alarm(self):
         if self.GPIO_AVAILABLE:
-            self.GPIO.output(self.green_pin, self.GPIO.LOW)
-            self.GPIO.output(self.red_pin, self.GPIO.HIGH)
-            self.GPIO.output(self.buzzer_pin, self.GPIO.HIGH)
+            self.GPIO.output(self.green_pin, self.GPIO.HIGH)
+            self.GPIO.output(self.red_pin, self.GPIO.LOW)
+            self.GPIO.output(self.buzzer_pin, self.GPIO.LOW)
             print("报警已触发！")
         else:
             print("GPIO不可用，无法触发报警。")
 
     def reset_alarm(self):
         if self.GPIO_AVAILABLE:
-            self.GPIO.output(self.green_pin, self.GPIO.HIGH)
-            self.GPIO.output(self.red_pin, self.GPIO.LOW)
-            self.GPIO.output(self.buzzer_pin, self.GPIO.LOW)
-            self.GPIO.output(self.close_pin, self.GPIO.LOW)
+            self.GPIO.output(self.green_pin, self.GPIO.LOW)
+            self.GPIO.output(self.red_pin, self.GPIO.HIGH)
+            self.GPIO.output(self.buzzer_pin, self.GPIO.HIGH)
             print("报警已重置。")
         else:
             print("GPIO不可用，无法重置报警。")
 
     def cleanup(self):
         if self.GPIO_AVAILABLE:
-            self.GPIO.output(self.green_pin, self.GPIO.HIGH)
-            self.GPIO.output(self.red_pin, self.GPIO.LOW)
-            self.GPIO.output(self.buzzer_pin, self.GPIO.LOW)
-            self.GPIO.output(self.close_pin, self.GPIO.LOW)
             self.GPIO.output(self.green_pin, self.GPIO.LOW)
+            self.GPIO.output(self.red_pin, self.GPIO.HIGH)
+            self.GPIO.output(self.buzzer_pin, self.GPIO.HIGH)
+            self.GPIO.output(self.close_pin, self.GPIO.HIGH)
             self.GPIO.cleanup()
 
     def close_mechine(self):
         if self.GPIO_AVAILABLE:
-            self.GPIO.output(self.green_pin, self.GPIO.HIGH)
+            self.GPIO.output(self.green_pin, self.GPIO.LOW)
             print("closing")
+
 
 # 相机操作类
 class CameraOperation:
